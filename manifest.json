@@ -1,9 +1,9 @@
 {
   "short_name": "PetroValv",
   "name": "PetroVálvulas 2026",
- "icons": [
+  "icons": [
     {
-      "src": "Petrovalvula2026.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/805/805561.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
