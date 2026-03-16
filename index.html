@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>PetroVálvulas 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root { --verde-logo: #00843d; --amarelo-logo: #ffcc00; --bg: #f4f7f6; --texto: #1d1d1b; }
+        * { box-sizing: border-box; touch-action: manipulation; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--texto); padding-bottom: 40px; }
+        header { background: #fff; padding: 5px; display: flex; justify-content: center; border-bottom: 4px solid var(--verde-logo); position: sticky; top: 0; z-index: 100; }
+        .logo-img { max-height: 50px; width: auto; }
+        main { padding: 15px; }
+        .card { background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid var(--verde-logo); }
+        .val { border-left: 5px solid var(--amarelo-logo) !important; }
+        h4 { margin: 0 0 10px 0; color: var(--verde-logo); font-size: 14px; text-transform: uppercase; }
+        label { display: block; font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #555; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 10px; background: #fff; color: #000; }
+        .btn { background: var(--verde-logo); color: #fff; border: 0; padding: 18px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 0 #005a2a; }
+        .btn-ajuste { width: 50px; height: 45px; border: none; border-radius: 8px; font-size: 20px; color: white; font-weight: bold; cursor: pointer; }
+        #status-sync { display: none; background: var(--amarelo-logo); text-align: center; padding: 5px; font-size: 11px; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-v { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 8px; }
+        #preview-foto { width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; display: none; margin-top: 10px; border: 2px solid var(--verde-logo); background: #eee; }
+        @media (max-width: 500px) { .grid-v { grid-template-columns: 1fr 1fr; } }
+        /* Isso vai alinhar APENAS os campos dentro da grid de fabricante */
+.grid-fabricante > div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.grid-fabricante label {
+    margin-bottom: 4px;
+}
+    </style>
+</head>
+<body>
+
+<header><img src="./Petrovalvula.png.png" class="logo-img"></header>
+<div id="status-sync">⬆ ENVIANDO DADOS PARA A PLANILHA...</div>
+
+<main>
+    <div class="card">
+        <h4>Dados do Poço</h4>
+        <label>Nome do Poço</label>
+        <input type="text" id="nomePoco" style="text-transform: uppercase;" placeholder="Digite o nome do poço...">
+        
+        <div class="grid">
+            <div><label>Data da Visita</label><input type="date" id="data_visita"></div>
+            <div>
+                <label>Qtd Válvulas</label>
+                <div style="display: flex; gap: 5px;">
+                    <button type="button" class="btn-ajuste" style="background:#dc3545" onclick="ajustar(-1)">-</button>
+                    <input type="number" id="qtd_valvulas" value="0" readonly style="text-align:center; margin:0">
+                    <button type="button" class="btn-ajuste" style="background:var(--verde-logo)" onclick="ajustar(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <label>Status do Poço</label>
+        <select id="status_poco">
+            <option>Produzindo</option><option>Injetando</option><option>Abandono temporário</option>
+            <option>Abandono Permanente</option><option>Operando para capitação</option><option>Sem acesso</option><option>Fechado</option><option>ND</option>
+        </select>
+
+        <label>Método de Elevação</label>
+        <select id="metodo">
+            <option>UBM</option><option>BCP</option><option>BCS</option><option>Injetor</option>
+            <option>Plunger lift</option><option>Gás lift</option><option>Surgente</option><option>ND</option>
+        </select>
+
+        <label>Foto do Poço (Placa ou Cabeça)</label>
+        <input type="file" id="foto_input" accept="image/*" capture="camera">
+        <img id="preview-foto">
+
+        <label>Observações Gerais</label>
+        <textarea id="obs" rows="2" placeholder="Notas sobre o poço..."></textarea>
+    </div>
+
+    <div id="cont"></div>
+    <button class="btn" onclick="save()">Salvar e Enviar Relatório</button>
+    
+</main>
+
+<script>
+    document.getElementById('data_visita').valueAsDate = new Date();
+
+    // Processamento da Foto
+    document.getElementById('foto_input').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const imgTag = document.getElementById('preview-foto');
+                const tempImg = new Image();
+                tempImg.src = event.target.result;
+                tempImg.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Redimensiona para não pesar no envio
+                    const scaleSize = MAX_WIDTH / tempImg.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = tempImg.height * scaleSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+                    imgTag.src = canvas.toDataURL('image/jpeg', 0.7);
+                    imgTag.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    function ajustar(n) {
+        const input = document.getElementById('qtd_valvulas');
+        let antiga = parseInt(input.value);
+        let nova = Math.max(0, antiga + n);
+        input.value = nova;
+        const cont = document.getElementById('cont');
+        
+        if (nova > antiga) {
+            for (let i = antiga + 1; i <= nova; i++) {
+                const d = document.createElement('div');
+                d.className = 'card val'; d.id = `v-${i}`;
+                d.innerHTML = `<h4>Válvula ${i}</h4>
+                <label>Localização</label>
+                <select class="v-l">
+                    <option>Válvula e/ou tomada da Cabeça de Poço (produção)</option>
+                    <option>Válvula Lateral (produção) da Árvore de Natal</option>
+                    <option>Válvula Lateral 1 (Anular A) do Conj. Cabeça de Produção</option>
+                    <option>Válvula Lateral 2 (Anular A) do Conj. Cabeça de Produção</option>                    
+                    <option>Válvula Lateral Oposta da Árvore de Natal</option>                        
+                    <option>Válvula Agulha (Kerotest) da Árvore de Natal</option> 
+                    <option>Válvula Agulha (Keroteste) do T de fluxo da Árvore de Natal</option>
+                    <option>Válvula Agulha/Kerotest (Injeção - COLUNA I) do T de fluxo da Árvore de Natal</option>
+                    <option>Válvula Agulha (Keroteste - COLUNA I) do T de fluxo da Árvore de Natal</option> 
+                    <option>Válvula Lateral (injeção - COLUNA I) da Árvore de Natal</option>
+                    <option>Válvula Lateral (produção - COLUNA I) da Árvore de Natal</option>                                         
+                    <option>Válvula Lateral (produção - COLUNA S) da Árvore de Natal</option>
+                    <option>Válvula Agulha (Keroteste - COLUNA S) do T de fluxo da Árvore de Natal</option>
+                    <option>Válvula de Pistoneio da Árvore de Natal</option>
+                    <option>Válvula Mestra da Árvore de Natal</option>  
+                    <option>Válvula Mestra Superior da Árvore de Natal</option> 
+                    <option>Válvula Mestra Inferior da Árvore de Natal</option>                   
+                    <option>Válvula Lateral Automatizada da Árvore de Natal</option>
+                    <option>Válvula Lateral Oposta do Conj. Cabeça de Produção</option>
+                    <option>Válvula Lateral do Conj. Cabeça de Produção</option>                   
+                    <option>Válvula Anular B</option>
+                    <option>Válvula Anular C</option>   
+                </select>
+                <div class="grid-v">
+                    <div><label>Tipo</label><select class="v-t"><option>Esferra</option><option>Agulha(kerotest)</option><option>Gaveta</option><option>Borboleta</option></select></div>
+                    <div><label>Diâmetro</label><select class="v-d"><option>2"</option><option>¹/2"</option><option>1"</option><option>2 1/16"</option><option>2 9/16"</option><option>3"</option><option>3 1/8"</option><option>4"</option></select></div>
+                    <div><label>Classe</label><select class="v-p"><option>3.000 PSI</option><option>800 PSI</option><option>1.000 PSI</option><option>1.500 PSI</option><option>2.000 PSI</option><option>2.500 PSI</option><option>6.000 PSI</option><option>10.000 PSI</option><option>5.000 PSI</option><option>1.500 LBS</option><option>3.000 LBS</option></select></div>
+                </div>
+               <div class="grid-fabricante" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="display: flex; flex-direction: column;">
+            <label>Fabricante</label>
+            <input type="text" class="v-f" placeholder="Fabricante">
+        </div>
+        <div style="display: flex; flex-direction: column;">
+            <label>Nº Série</label>
+            <input type="text" class="v-s" placeholder="Nº Série">
+        </div>
+    </div>
+                <label>Status</label><select class="v-st"><option>Aberta</option><option>Fechada</option></select>`;
+                cont.appendChild(d);
+            }
+        } else {
+            for (let i = antiga; i > nova; i--) {
+                const el = document.getElementById(`v-${i}`);
+                if (el) el.remove();
+            }
+        }
+    }
+
+    async function save() {
+        const btn = document.querySelector('.btn');
+        const nomePocoInput = document.getElementById('nomePoco');
+        
+        if(!nomePocoInput.value) { 
+            alert("Digite o nome do poço!"); 
+            return; 
+        }
+
+        btn.disabled = true; 
+        btn.innerText = "PROCESSANDO...";
+        
+        const fotoImg = document.getElementById('preview-foto');
+        const dados = {
+            p: nomePocoInput.value.toUpperCase(),
+            dt: document.getElementById('data_visita').value,
+            stP: document.getElementById('status_poco').value,
+            met: document.getElementById('metodo').value,
+            obs: document.getElementById('obs').value,
+            foto: fotoImg.style.display === 'block' ? fotoImg.src : "",
+            vs: Array.from(document.querySelectorAll('.val')).map(v => ({
+                l: v.querySelector('.v-l').value,
+                t: v.querySelector('.v-t').value,
+                d: v.querySelector('.v-d').value,
+                pres: v.querySelector('.v-p').value,
+                f: v.querySelector('.v-f').value,
+                s: v.querySelector('.v-s').value,
+                st: v.querySelector('.v-st').value
+            }))
+        };
+
+        let local = JSON.parse(localStorage.getItem('f_v') || '[]');
+        local.push(dados);
+        localStorage.setItem('f_v', JSON.stringify(local));
+        
+        alert('Inspeção salva no dispositivo!');
+        
+        // Limpa o formulário
+        nomePocoInput.value = "";
+        document.getElementById('obs').value = "";
+        document.getElementById('foto_input').value = "";
+        document.getElementById('preview-foto').style.display = "none";
+        document.getElementById('cont').innerHTML = "";
+        document.getElementById('qtd_valvulas').value = "0";
+
+        btn.disabled = false; 
+        btn.innerText = "Salvar e Enviar Relatório";
+        sync();
+    }
+
+    async function sync() {
+        if (!navigator.onLine) return;
+        let local = JSON.parse(localStorage.getItem('f_v') || '[]');
+        if (local.length === 0) return;
+        
+        document.getElementById('status-sync').style.display = 'block';
+
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOjgYkp3e2cQB833lrqcUru3qTtLVu0DjjbiIIp2FPjtigA2KRRZsj7Sya1j9hTqLerQ/exec';
+
+        for (let i = local.length - 1; i >= 0; i--) {
+            try {
+                // CORREÇÃO CRUCIAL: Usando FormData ou envio simples sem no-cors
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Mantido para evitar erro de redirecionamento, mas agora o Apps Script vai ignorar o erro de permissão
+                    body: JSON.stringify(local[i])
+                });
+                local.splice(i, 1);
+            } catch (e) { 
+                console.error("Erro na sincronização", e); 
+            }
+        }
+        localStorage.setItem('f_v', JSON.stringify(local));
+        document.getElementById('status-sync').style.display = 'none';
+    }
+
+    window.onload = sync;
+</script>
+</body>
+</html>
