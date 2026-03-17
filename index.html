@@ -152,7 +152,8 @@
                 <div class="grid-v">
                     <div><label>Tipo</label><select class="v-t"><option>Esferra</option><option>Agulha(kerotest)</option><option>Gaveta</option><option>Borboleta</option></select></div>
                     <div><label>Diâmetro</label><select class="v-d"><option>2"</option><option>¹/2"</option><option>1"</option><option>2 1/16"</option><option>2 9/16"</option><option>3"</option><option>3 1/8"</option><option>4"</option></select></div>
-                    <div><label>Classe</label><select class="v-p"><option>3.000 PSI</option><option>800 PSI</option><option>1.000 PSI</option><option>1.500 PSI</option><option>2.000 PSI</option><option>2.500 PSI</option><option>6.000 PSI</option><option>10.000 PSI</option><option>5.000 PSI</option><option>1.500 LBS</option><option>3.000 LBS</option></select></div>
+                    <div><label>Classe</label><select class="v-p"><option>3.000 PSI</option><option>300 PSI</option><option>800 PSI</option><option>1.000 PSI</option><option>1.500 PSI</option><option>2.000 PSI</option><option>2.500 PSI</option><option>6.000 PSI</option>
+                    <option>10.000 PSI</option><option>5.000 PSI</option><option>1.500 LBS</option><option>3.000 LBS</option></select></div>
                 </div>
                <div class="grid-fabricante" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
         <div style="display: flex; flex-direction: column;">
@@ -252,6 +253,13 @@
     }
 
     window.onload = sync;
+    if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker registrado!', reg))
+            .catch(err => console.error('Erro ao registrar Service Worker:', err));
+    });
+}
 </script>
 </body>
 </html>
