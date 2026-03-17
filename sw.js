@@ -1,51 +1,31 @@
-const CACHE_NAME = 'petro-valvulas-v26';
-
-// Lista de arquivos que devem funcionar offline
+const CACHE_NAME = 'petrovalvulas-v1';
+// Liste EXATAMENTE os nomes dos arquivos que você tem no GitHub
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './Petrovalvula.png.png' // O nome exato que você configurou
+  './Petrovalvula2026.png'
 ];
 
-// Instalação: Salva os arquivos no cache do celular
+// Instala o Service Worker e guarda os arquivos no cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      console.log('Arquivos em cache!');
       return cache.addAll(ASSETS);
     })
   );
-  self.skipWaiting();
 });
 
-// Ativação: Limpa versões antigas do app para não travar
+// Ativa o Service Worker
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
+  event.waitUntil(clients.claim());
 });
 
-// Busca: Serve os arquivos do cache quando estiver sem internet
+// Responde mesmo quando estiver sem internet (Offline)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Retorna o arquivo do cache se encontrar, senão busca na rede
-      return response || fetch(event.request).catch(() => {
-        // Se falhar a rede (offline) e não tiver no cache, tenta a página inicial
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
+      return response || fetch(event.request);
     })
   );
 });
